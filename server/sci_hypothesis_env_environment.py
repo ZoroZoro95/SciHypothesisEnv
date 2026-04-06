@@ -12,15 +12,18 @@ Perfect for testing HTTP server infrastructure.
 """
 import numpy as np
 import uuid
-from typing import Optional,ClassVar
+from typing import Optional, ClassVar
 from openenv.core.env_server.interfaces import Environment
 from openenv.core.env_server.types import State
 from openenv.core.env_server.types import Action, Observation
-from .simulator import generate_task_config, run_experiment, ReactionConfig
-from .reward import compute_rewards
+
 try:
+    from .simulator import generate_task_config, run_experiment, ReactionConfig
+    from .reward import compute_step_reward, compute_rewards
     from ..models import SciHypothesisAction, SciHypothesisObservation
 except ImportError:
+    from server.simulator import generate_task_config, run_experiment, ReactionConfig
+    from server.reward import compute_step_reward, compute_rewards
     from models import SciHypothesisAction, SciHypothesisObservation
 
 TASK_DESCRIPTIONS = {
@@ -50,13 +53,12 @@ TASK_DESCRIPTIONS = {
     )
 }
 
-MAX_STEPS = {1: 6, 2: 8, 3: 12}
+MAX_STEPS = {1: 6, 2: 8, 3: 10}
+
 
 class SciHypothesisEnvironment(Environment):
 
     SUPPORTS_CONCURRENT_SESSIONS = True
-
-    # Class-level session store — survives across HTTP requests
     _sessions: ClassVar[dict] = {}
 
     def __init__(self):
@@ -67,9 +69,9 @@ class SciHypothesisEnvironment(Environment):
         self._step_count: int = 0
         self._done: bool = False
         self._experiment_log: list = []
+        self._accumulated_step_rewards: float = 0.0
 
     def _save_session(self):
-        """Persist current state to class-level store."""
         if self._episode_id:
             SciHypothesisEnvironment._sessions[self._episode_id] = {
                 "config": self._config,
@@ -77,10 +79,10 @@ class SciHypothesisEnvironment(Environment):
                 "step_count": self._step_count,
                 "done": self._done,
                 "experiment_log": self._experiment_log,
+                "accumulated_step_rewards": self._accumulated_step_rewards,
             }
 
     def _load_session(self, episode_id: str) -> bool:
-        """Load state from class-level store. Returns True if found."""
         session = SciHypothesisEnvironment._sessions.get(episode_id)
         if session:
             self._config = session["config"]
@@ -88,6 +90,7 @@ class SciHypothesisEnvironment(Environment):
             self._step_count = session["step_count"]
             self._done = session["done"]
             self._experiment_log = session["experiment_log"]
+            self._accumulated_step_rewards = session.get("accumulated_step_rewards", 0.0)
             self._episode_id = episode_id
             return True
         return False
@@ -104,13 +107,12 @@ class SciHypothesisEnvironment(Environment):
         self._step_count = 0
         self._done = False
         self._experiment_log = []
+        self._accumulated_step_rewards = 0.0
 
         self._config = generate_task_config(
             self._task_id,
             seed=seed or np.random.randint(0, 99999)
         )
-
-        # Save so HTTP step can find it
         self._save_session()
 
         return SciHypothesisObservation(
@@ -128,7 +130,6 @@ class SciHypothesisEnvironment(Environment):
             ),
             done=False,
             reward=None,
-            # Pass episode_id in metadata so client can send it back
             metadata={"episode_id": self._episode_id}
         )
 
@@ -139,12 +140,11 @@ class SciHypothesisEnvironment(Environment):
         **kwargs
     ) -> SciHypothesisObservation:
 
-        # Try to load session from episode_id in action metadata
+        # Load session from episode_id in action metadata
         episode_id = (action.metadata or {}).get("episode_id")
         if episode_id and self._task_id is None:
             self._load_session(episode_id)
 
-        # Final guard
         if self._task_id is None:
             raise ValueError(
                 "No active session. Call reset() first and pass "
@@ -157,6 +157,7 @@ class SciHypothesisEnvironment(Environment):
         self._step_count += 1
         remaining = MAX_STEPS[self._task_id] - self._step_count
 
+        # ---- run_experiment ----
         if action.action_type == "run_experiment":
             temp = max(270.0, min(400.0, action.temperature or 298.0))
             conc = max(0.001, min(2.0, action.concentration or 1.0))
@@ -169,6 +170,17 @@ class SciHypothesisEnvironment(Environment):
                 "concentration": conc,
                 "data": data
             })
+
+            # Per-step reward AFTER appending to log
+            step_reward, step_breakdown = compute_step_reward(
+                action_type="run_experiment",
+                step_count=self._step_count,
+                max_steps=MAX_STEPS[self._task_id],
+                experiment_log=self._experiment_log,
+                temperature=temp,
+                concentration=conc,
+            )
+            self._accumulated_step_rewards += step_reward
             self._save_session()
 
             return SciHypothesisObservation(
@@ -179,11 +191,25 @@ class SciHypothesisEnvironment(Environment):
                 experiments_remaining=remaining,
                 experimental_data=data,
                 done=False,
-                reward=0.0,
-                metadata={"episode_id": self._episode_id}
+                reward=step_reward,
+                metadata={
+                    "episode_id": self._episode_id,
+                    "step_breakdown": step_breakdown
+                }
             )
 
+        # ---- propose_hypothesis ----
         elif action.action_type == "propose_hypothesis":
+            step_reward, step_breakdown = compute_step_reward(
+                action_type="propose_hypothesis",
+                step_count=self._step_count,
+                max_steps=MAX_STEPS[self._task_id],
+                experiment_log=self._experiment_log,
+                predicted_order=action.predicted_order,
+                predicted_k=action.predicted_k,
+            )
+            self._accumulated_step_rewards += step_reward
+
             feedback = (
                 f"Hypothesis recorded: '{action.hypothesis_text}'. "
                 f"Predicted order: {action.predicted_order}, "
@@ -200,10 +226,14 @@ class SciHypothesisEnvironment(Environment):
                 experiments_remaining=remaining,
                 hypothesis_feedback=feedback,
                 done=False,
-                reward=0.0,
-                metadata={"episode_id": self._episode_id}
+                reward=step_reward,
+                metadata={
+                    "episode_id": self._episode_id,
+                    "step_breakdown": step_breakdown
+                }
             )
 
+        # ---- conclude ----
         elif action.action_type == "conclude":
             self._done = True
 
@@ -216,7 +246,8 @@ class SciHypothesisEnvironment(Environment):
                 true_k=self._config.k,
                 true_activation_energy=self._config.activation_energy,
                 steps_used=self._step_count,
-                max_steps=MAX_STEPS[self._task_id]
+                max_steps=MAX_STEPS[self._task_id],
+                accumulated_step_rewards=self._accumulated_step_rewards
             )
             self._save_session()
 

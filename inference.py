@@ -10,9 +10,9 @@ from client import SciHypothesisEnv
 from models import SciHypothesisAction as HypothesisAction
 
 # --- Required env vars ---
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-HF_TOKEN = os.getenv("HF_TOKEN", "")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.groq.com/openai/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "llama-3.1-8b-instant")
+API_KEY = os.getenv("GROQ_API_KEY") or os.getenv("HF_TOKEN", "")
 ENV_URL = os.getenv("ENV_URL", "https://Quaxg-sci-hypothesis-env.hf.space")
 IMAGE_NAME = os.getenv("IMAGE_NAME", None)
 
@@ -90,7 +90,7 @@ async def run_episode(task_id: int) -> float:
     success = False
     score = 0.0
 
-    llm = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+    llm = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
     log_start(task=task_name, env=BENCHMARK, model=MODEL_NAME)
 
@@ -122,7 +122,7 @@ async def run_episode(task_id: int) -> float:
             error = None
             try:
                 action_dict = call_llm(llm, messages)
-                print(f"[DEBUG] action_dict={action_dict}", flush=True)
+                # print(f"[DEBUG] action_dict={action_dict}", flush=True)
                 action = HypothesisAction(**action_dict)
             except Exception as e:
                 error = str(e)[:80]
@@ -138,8 +138,9 @@ async def run_episode(task_id: int) -> float:
 
             # Step environment
             result = await env.step(action)
+            print(f"RAW payload check: obs.reward={result.observation.reward}, result.reward={result.reward}", flush=True)
             obs = result.observation
-            reward = result.reward or 0.0
+            reward = obs.reward if obs.reward is not None else (result.reward or 0.0)
             done = result.done
 
             rewards.append(reward)
@@ -189,14 +190,24 @@ async def run_episode(task_id: int) -> float:
     return score
 
 
+# async def main():
+#     all_scores = []
+#     for task_id in [1, 2, 3]:
+#         score = await run_episode(task_id)
+#         all_scores.append(score)
+
+#     print(f"\n[SUMMARY] avg_score={sum(all_scores)/len(all_scores):.3f}", flush=True)
+
 async def main():
     all_scores = []
     for task_id in [1, 2, 3]:
-        score = await run_episode(task_id)
+        score = 0.0
+        for attempt in range(2):  # retry once on failure
+            score = await run_episode(task_id)
+            if score > 0:
+                break
         all_scores.append(score)
 
     print(f"\n[SUMMARY] avg_score={sum(all_scores)/len(all_scores):.3f}", flush=True)
-
-
 if __name__ == "__main__":
     asyncio.run(main())
