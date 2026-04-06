@@ -57,35 +57,33 @@ class SciHypothesisEnv(
         return action.model_dump(exclude_none=True)
 
     def _parse_result(self, payload: Dict) -> StepResult[SciHypothesisObservation]:
-        """
-        Parse server response into StepResult[SciHypothesisObservation].
-
-        Args:
-            payload: JSON response data from server
-
-        Returns:
-            StepResult with SciHypothesisObservation
-        """
         obs_data = payload.get("observation", {})
+        
+        # reward lives on observation, not top-level payload
+        reward = obs_data.get("reward") if obs_data.get("reward") is not None else payload.get("reward")
+        
         observation = SciHypothesisObservation(
             task_id=obs_data.get("task_id", 1),
             task_description=obs_data.get("task_description", ""),
             current_step=obs_data.get("current_step", 0),
             max_steps=obs_data.get("max_steps", 6),
             experiments_remaining=obs_data.get("experiments_remaining", 0),
+            budget_remaining=obs_data.get("budget_remaining"),
+            budget_spent=obs_data.get("budget_spent"),
             experimental_data=obs_data.get("experimental_data"),
+            analysis_hints=obs_data.get("analysis_hints"),
             hypothesis_feedback=obs_data.get("hypothesis_feedback"),
             known_context=obs_data.get("known_context"),
             final_feedback=obs_data.get("final_feedback"),
             score_breakdown=obs_data.get("score_breakdown"),
             done=payload.get("done", False),
-            reward=payload.get("reward"),
+            reward=reward,
             metadata=obs_data.get("metadata", {}),
         )
-        from openenv.core.client_types import StepResult
+
         return StepResult(
             observation=observation,
-            reward=payload.get("reward"),
+            reward=reward,
             done=payload.get("done", False),
         )
 
