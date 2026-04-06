@@ -172,7 +172,8 @@ async def run_episode(task_id: int) -> float:
                 obs_text = obs.final_feedback + "\n"
 
             obs_text += f"Steps remaining: {obs.experiments_remaining}\n"
-            obs_text += f"Budget remaining: ${obs.budget_remaining:.1f}"
+            if obs.budget_remaining is not None:
+                obs_text += f"Budget remaining: ${obs.budget_remaining:.1f}"
 
             messages.append({"role": "assistant", "content": json.dumps(action_dict)})
             messages.append({"role": "user", "content": obs_text + "\nNext action as JSON:"})
