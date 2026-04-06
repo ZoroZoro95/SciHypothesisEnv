@@ -22,24 +22,29 @@ SUCCESS_THRESHOLD = 0.5
 
 SYSTEM_PROMPT = textwrap.dedent("""
 You are a scientific agent solving chemical kinetics problems.
-You interact with a reaction simulator. You must respond with ONLY valid JSON — no explanation, no markdown.
+You interact with a reaction simulator. You must respond with ONLY valid JSON.
 
 Available actions:
-
 1. Run an experiment:
-{"action_type": "run_experiment", "temperature": <270-400>, "concentration": <0.001-2.0>, "time_points": [0, 30, 60, 120, 300]}
+{"action_type": "run_experiment", "temperature": <270-400>, "concentration": <0.001-2.0>, "time_points": [...]}
 
 2. Propose a hypothesis:
-{"action_type": "propose_hypothesis", "hypothesis_text": "<belief>", "predicted_order": <1 or 2>, "predicted_k": <float>}
+{"action_type": "propose_hypothesis", "hypothesis_text": "<belief>", "predicted_order": <1, 2, or 3>, "predicted_k": <float>}
 
 3. Conclude (ends episode, triggers scoring):
-{"action_type": "conclude", "conclusion": "<reasoning>", "final_order": <1 or 2>, "final_k": <float>, "final_activation_energy": <float or null>}
+{"action_type": "conclude", "conclusion": "<reasoning>", "final_order": <1, 2, or 3>, "final_k": <float>, "final_activation_energy": <float or null>}
 
-Strategy:
-- 1st order reaction: ln(C) decreases linearly with time
-- 2nd order reaction: 1/C increases linearly with time
-- For Task 3: vary temperature across experiments to find activation energy
-- Conclude before running out of steps to get efficiency bonus
+Scenarios & Strategy:
+- Pharmacokinetics: Identify if a drug clears via 1st or 2nd order kinetics. Start at 310.15 K (Body Temp).
+- Industrial Equilibrium: Characterize reversible reactions (Order 3) where concentration plateaus.
+- Rocket Propellants: Determine E_a by varying temperature across a wide range (Arrhenius plot).
+
+Budget Management:
+Each experiment costs money. Task 1: $500, Task 2: $800, Task 3: $1200.
+Costs: Room temp $50, High temp (>350K) $150, Low temp (<280K) $120, High conc (>1.0) $80, Many/Long points $100.
+
+Analysis Hints:
+The environment provides "analysis_hints" after each experiment. Use these to refine your strategy.
 """).strip()
 
 
@@ -48,11 +53,11 @@ def log_start(task: str, env: str, model: str):
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
 
-def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]):
+def log_step(step: int, action: str, reward: float, done: bool, budget: float, error: Optional[str]):
     error_val = error if error else "null"
     print(
         f"[STEP] step={step} action={action} reward={reward:.2f} "
-        f"done={str(done).lower()} error={error_val}",
+        f"budget={budget:.1f} done={str(done).lower()} error={error_val}",
         flush=True
     )
 
@@ -110,6 +115,7 @@ async def run_episode(task_id: int) -> float:
                 f"Task: {obs.task_description}\n"
                 f"Context: {obs.known_context}\n"
                 f"Max steps: {obs.max_steps}\n"
+                f"Starting Budget: ${obs.budget_remaining}\n"
                 "Respond with your first action as JSON."
             )}
         ]
@@ -138,7 +144,6 @@ async def run_episode(task_id: int) -> float:
 
             # Step environment
             result = await env.step(action)
-            print(f"RAW payload check: obs.reward={result.observation.reward}, result.reward={result.reward}", flush=True)
             obs = result.observation
             reward = obs.reward if obs.reward is not None else (result.reward or 0.0)
             done = result.done
@@ -151,19 +156,23 @@ async def run_episode(task_id: int) -> float:
                 action=json.dumps(action_dict),
                 reward=reward,
                 done=done,
+                budget=obs.budget_remaining or 0,
                 error=error
             )
 
             # Build next message from observation
             obs_text = ""
             if obs.experimental_data:
-                obs_text = f"Experiment results: {json.dumps(obs.experimental_data)}"
+                obs_text = f"Experiment results: {json.dumps(obs.experimental_data)}\n"
+                if obs.analysis_hints:
+                    obs_text += f"Analysis Hints: {json.dumps(obs.analysis_hints)}\n"
             elif obs.hypothesis_feedback:
-                obs_text = obs.hypothesis_feedback
+                obs_text = obs.hypothesis_feedback + "\n"
             elif obs.final_feedback:
-                obs_text = obs.final_feedback
+                obs_text = obs.final_feedback + "\n"
 
-            obs_text += f"\nSteps remaining: {obs.experiments_remaining}"
+            obs_text += f"Steps remaining: {obs.experiments_remaining}\n"
+            obs_text += f"Budget remaining: ${obs.budget_remaining:.1f}"
 
             messages.append({"role": "assistant", "content": json.dumps(action_dict)})
             messages.append({"role": "user", "content": obs_text + "\nNext action as JSON:"})

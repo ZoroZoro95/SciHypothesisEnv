@@ -31,12 +31,12 @@ class SciHypothesisAction(Action):
 
     #used when action_type is == propose_hypothesis
     hypothesis_text : Optional[str] = None #free text beleif system
-    predicted_order : Optional[int] = None # 1 or 2
+    predicted_order : Optional[int] = None # 1=1st, 2=2nd, 3=Reversible
     predicted_k : Optional[float] = None #estimated value of rate constant
 
     #used when action_type == conclude
     conclusion : Optional[str] = None #Reasoning Summary
-    final_order : Optional[int] = None # 1 or 2
+    final_order : Optional[int] = None # 1=1st, 2=2nd, 3=Reversible
     final_k : Optional[float] = None #estimated value of rate constant
     final_activation_energy : Optional[float] = None  # J/mol (Task 3 only)
 
@@ -52,10 +52,17 @@ class SciHypothesisObservation(Observation):
     max_steps: int                      # budget (varies by task)
     experiments_remaining: int          # budget remaining
 
+    # Budget info
+    budget_remaining: Optional[float] = None
+    budget_spent: Optional[float] = None
+
     # After run_experiment
-    experimental_data : Optional[list[dict]] = None # 
+    experimental_data : Optional[list[dict]] = None 
     # e.g. [{"time": 0, "concentration": 1.0},
     #        {"time": 30, "concentration": 0.55}]
+    
+    # Analysis hints provided by the environment
+    analysis_hints: Optional[dict] = None
 
     # present after propose_hypothesis
     hypothesis_feedback : Optional[str] = None
