@@ -127,7 +127,7 @@ async def run_episode(task_id: int) -> float:
             # Get action from LLM
             error = None
             try:
-                action_dict = call_llm(llm, messages)
+                action_dict = await asyncio.to_thread(call_llm, llm, messages)
                 # print(f"[DEBUG] action_dict={action_dict}", flush=True)
                 action = HypothesisAction(**action_dict)
             except Exception as e:
@@ -172,7 +172,8 @@ async def run_episode(task_id: int) -> float:
                 obs_text = obs.final_feedback + "\n"
 
             obs_text += f"Steps remaining: {obs.experiments_remaining}\n"
-            obs_text += f"Budget remaining: ${obs.budget_remaining:.1f}"
+            if obs.budget_remaining is not None:
+                obs_text += f"Budget remaining: ${obs.budget_remaining:.1f}"
 
             messages.append({"role": "assistant", "content": json.dumps(action_dict)})
             messages.append({"role": "user", "content": obs_text + "\nNext action as JSON:"})
