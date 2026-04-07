@@ -182,9 +182,16 @@ async def run_episode(task_id: int) -> float:
                 break
 
         # Compute final score
+        # Compute final score
         final_rewards = [r for r in rewards if r > 0]
-        score = max(final_rewards) if final_rewards else 0.0
-        score = min(max(score, 0.0), 1.0)
+
+        # Ensure we never return exactly 0.0 if no rewards were found
+        score = max(final_rewards) if final_rewards else 0.001
+
+        # CRITICAL: Change 0.0 to 0.001 and 1.0 to 0.999
+        # This ensures the score is strictly within the (0, 1) range
+        score = min(max(score, 0.001), 0.999)
+
         success = score >= SUCCESS_THRESHOLD
 
     except Exception as e:
