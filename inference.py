@@ -228,8 +228,5 @@ async def main():
                 break
         all_scores.append(score)
 
-    import sys
-    print(f"\n[SUMMARY] avg_score={sum(all_scores)/len(all_scores):.3f}", file=sys.stderr, flush=True)
-
 if __name__ == "__main__":
     asyncio.run(main())
