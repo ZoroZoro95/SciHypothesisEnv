@@ -62,10 +62,10 @@ def log_step(step: int, action: str, reward: float, done: bool, budget: float, e
     )
 
 
-def log_end(success: bool, steps: int, rewards: List[float]):
+def log_end(success: bool, steps: int, score: float, rewards: List[float]):
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
     print(
-        f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}",
+        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
         flush=True
     )
 
@@ -182,9 +182,16 @@ async def run_episode(task_id: int) -> float:
                 break
 
         # Compute final score
+        # Compute final score
         final_rewards = [r for r in rewards if r > 0]
-        score = max(final_rewards) if final_rewards else 0.0
-        score = min(max(score, 0.0), 1.0)
+
+        # Ensure we never return exactly 0.0 if no rewards were found
+        score = max(final_rewards) if final_rewards else 0.001
+
+        # CRITICAL: Change 0.0 to 0.001 and 1.0 to 0.999
+        # This ensures the score is strictly within the (0, 1) range
+        score = min(max(score, 0.001), 0.999)
+
         success = score >= SUCCESS_THRESHOLD
 
     except Exception as e:
@@ -195,8 +202,7 @@ async def run_episode(task_id: int) -> float:
             await env.close()
         except Exception as e:
             print(f"[DEBUG] env.close() error: {e}", flush=True)
-        log_end(success=success, steps=steps_taken, rewards=rewards)
-
+        log_end(success=success, steps=steps_taken,score=score, rewards=rewards)
     return score
 
 

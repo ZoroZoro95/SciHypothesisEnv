@@ -186,7 +186,7 @@ def compute_rewards(
         order_score + k_score + efficiency_score + ea_score + step_bonus + budget_efficiency, 4
     )
     # total = min(1.0, total)
-    total = min(0.999, max(0.001, total))
+    total = max(0.0011, min(0.9989, total))
 
     breakdown = {
         "order_correct": order_score,
