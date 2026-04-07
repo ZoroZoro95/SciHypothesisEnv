@@ -127,7 +127,7 @@ async def run_episode(task_id: int) -> float:
             # Get action from LLM
             error = None
             try:
-                action_dict = call_llm(llm, messages)
+                action_dict = await asyncio.to_thread(call_llm, llm, messages)
                 # print(f"[DEBUG] action_dict={action_dict}", flush=True)
                 action = HypothesisAction(**action_dict)
             except Exception as e:
