@@ -55,8 +55,12 @@ def log_start(task: str, env: str, model: str):
 
 def log_step(step: int, action: str, reward: float, done: bool, budget: float, error: Optional[str]):
     error_val = error if error else "null"
+    action_str = action.replace("\n", " ").replace("\r", " ")
+    if len(action_str) > 200:
+        action_str = action_str[:200] + "..."
+    # Keep the budget log variable if platform needs it, otherwise it's just harmless
     print(
-        f"[STEP] step={step} action={action} reward={reward:.2f} "
+        f"[STEP] step={step} action={action_str} reward={reward:.2f} "
         f"budget={budget:.1f} done={str(done).lower()} error={error_val}",
         flush=True
     )
@@ -224,6 +228,8 @@ async def main():
                 break
         all_scores.append(score)
 
-    print(f"\n[SUMMARY] avg_score={sum(all_scores)/len(all_scores):.3f}", flush=True)
+    import sys
+    print(f"\n[SUMMARY] avg_score={sum(all_scores)/len(all_scores):.3f}", file=sys.stderr, flush=True)
+
 if __name__ == "__main__":
     asyncio.run(main())
