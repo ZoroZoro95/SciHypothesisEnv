@@ -202,8 +202,7 @@ async def run_episode(task_id: int) -> float:
             await env.close()
         except Exception as e:
             print(f"[DEBUG] env.close() error: {e}", flush=True)
-        log_end(success=success, steps=steps_taken, rewards=rewards)
-
+        log_end(success=success, steps=steps_taken,score=score, rewards=rewards)
     return score
 
 
