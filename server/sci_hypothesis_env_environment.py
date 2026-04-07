@@ -50,7 +50,7 @@ TASK_DESCRIPTIONS = {
     )
 }
 
-MAX_STEPS = {1: 8, 2: 10, 3: 12}
+MAX_STEPS = {1: 5, 2: 6, 3: 8}
 TASK_BUDGETS = {1: 500, 2: 800, 3: 1200}
 
 
