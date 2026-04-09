@@ -2,13 +2,16 @@
 import asyncio
 import json
 import os
+import sys
 import textwrap
 from typing import List, Optional
+
+# Add parent directory to sys.path to allow importing the package locally
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from openai import OpenAI
 from sci_hypothesis_env.client import SciHypothesisEnv
 from sci_hypothesis_env.models import SciHypothesisAction as HypothesisAction
-
 
 # --- Required env vars ---
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.groq.com/openai/v1")
@@ -208,17 +211,9 @@ async def run_episode(task_id: int) -> float:
             await env.close()
         except Exception as e:
             print(f"[DEBUG] env.close() error: {e}", flush=True)
-        log_end(success=success, steps=steps_taken,score=score, rewards=rewards)
+        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
     return score
 
-
-# async def main():
-#     all_scores = []
-#     for task_id in [1, 2, 3]:
-#         score = await run_episode(task_id)
-#         all_scores.append(score)
-
-#     print(f"\n[SUMMARY] avg_score={sum(all_scores)/len(all_scores):.3f}", flush=True)
 
 async def main():
     all_scores = []
