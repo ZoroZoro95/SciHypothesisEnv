@@ -101,7 +101,7 @@ Each episode is scored on five components, weighted as follows:
 |-----------|--------|-------------|
 | **Order Accuracy** | 30% | Correct reaction order (1, 2, or 3) |
 | **k Accuracy** | 25% | Rate constant accuracy (log-scale error) |
-| **Ea Accuracy** | 15% | Activation energy accuracy (Task 3 only) |
+| **Ea Accuracy** | 15% | Activation energy accuracy (Tasks 3 & 4) |
 | **Budget Efficiency** | 15% | More reward for spending less |
 | **Step Efficiency** | 5% | More reward for concluding earlier |
 | **Step Bonuses** | 10% | Accumulated reward from intermediate steps |

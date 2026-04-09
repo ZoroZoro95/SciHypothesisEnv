@@ -160,9 +160,9 @@ def compute_rewards(
     else:
         k_score = 0.0
 
-    # Component 3: Activation energy Task 3 only (0.15)
+    # Component 3: Activation energy Task 3 & 4 (0.15)
     ea_score = 0.0
-    if task_id == 3:
+    if task_id in [3, 4]:
         if final_activation_energy and final_activation_energy > 0:
             ea_error = abs(
                 final_activation_energy - true_activation_energy
