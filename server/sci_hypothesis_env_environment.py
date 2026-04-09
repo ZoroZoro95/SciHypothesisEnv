@@ -47,11 +47,18 @@ TASK_DESCRIPTIONS = {
         "You must determine the reaction order, k, AND the activation energy (Ea). "
         "Data is extremely noisy. Precision is critical for mission success. Budget: $1200. "
         "You MUST vary temperature strategically to build an Arrhenius model."
+    ),
+    4: (
+        "FOOD SCIENCE — Vitamin C Degradation. "
+        "A fruit juice manufacturer wants to optimize pasteurization. "
+        "Determine the degradation kinetics of Vitamin C (Order 1 or 2) "
+        "at pasteurization temperatures (330-380 K). Budget: $1000. "
+        "Moderate noise levels require multiple experiments for confidence."
     )
 }
 
-MAX_STEPS = {1: 5, 2: 6, 3: 8}
-TASK_BUDGETS = {1: 500, 2: 800, 3: 1200}
+MAX_STEPS = {1: 5, 2: 6, 3: 8, 4: 7}
+TASK_BUDGETS = {1: 500, 2: 800, 3: 1200, 4: 1000}
 
 
 class SciHypothesisEnvironment(Environment):
@@ -103,7 +110,7 @@ class SciHypothesisEnvironment(Environment):
         **kwargs
     ) -> SciHypothesisObservation:
         task_id = kwargs.get("task_id", None)
-        self._task_id = task_id or int(np.random.choice([1, 2, 3]))
+        self._task_id = task_id or int(np.random.choice([1, 2, 3, 4]))
         self._episode_id = episode_id or str(uuid.uuid4())
         self._step_count = 0
         self._done = False
