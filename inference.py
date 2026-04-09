@@ -2,12 +2,16 @@
 import asyncio
 import json
 import os
+import sys
 import textwrap
 from typing import List, Optional
 
+# Add parent directory to sys.path to allow importing the package locally
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from openai import OpenAI
-from client import SciHypothesisEnv
-from models import SciHypothesisAction as HypothesisAction
+from sci_hypothesis_env.client import SciHypothesisEnv
+from sci_hypothesis_env.models import SciHypothesisAction as HypothesisAction
 
 # --- Required env vars ---
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.groq.com/openai/v1")
@@ -38,9 +42,10 @@ Scenarios & Strategy:
 - Pharmacokinetics: Identify if a drug clears via 1st or 2nd order kinetics. Start at 310.15 K (Body Temp).
 - Industrial Equilibrium: Characterize reversible reactions (Order 3) where concentration plateaus.
 - Rocket Propellants: Determine E_a by varying temperature across a wide range (Arrhenius plot).
+- Vitamin C Degradation: Determine if degradation is 1st or 2nd order at pasteurization temps (330-380 K).
 
 Budget Management:
-Each experiment costs money. Task 1: $500, Task 2: $800, Task 3: $1200.
+Each experiment costs money. Task 1: $500, Task 2: $800, Task 3: $1200, Task 4: $1000.
 Costs: Room temp $50, High temp (>350K) $150, Low temp (<280K) $120, High conc (>1.0) $80, Many/Long points $100.
 
 Analysis Hints:
@@ -206,21 +211,13 @@ async def run_episode(task_id: int) -> float:
             await env.close()
         except Exception as e:
             print(f"[DEBUG] env.close() error: {e}", flush=True)
-        log_end(success=success, steps=steps_taken,score=score, rewards=rewards)
+        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
     return score
 
 
-# async def main():
-#     all_scores = []
-#     for task_id in [1, 2, 3]:
-#         score = await run_episode(task_id)
-#         all_scores.append(score)
-
-#     print(f"\n[SUMMARY] avg_score={sum(all_scores)/len(all_scores):.3f}", flush=True)
-
 async def main():
     all_scores = []
-    for task_id in [1, 2, 3]:
+    for task_id in [1, 2, 3, 4]:
         score = 0.0
         for attempt in range(2):  # retry once on failure
             score = await run_episode(task_id)

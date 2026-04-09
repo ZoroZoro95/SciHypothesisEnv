@@ -233,18 +233,28 @@ def generate_task_config(task_id: int, seed: int = None) -> ReactionConfig:
             noise_level=0.015,
             scenario="Carbon Capture"
         )
-    else: # task_id == 3
-        # Scenario: Propellant Stability (Rocket Fuel)
-        # Goal: High-precision k and Activation Energy (Ea)
-        # Reference Temp: 350.0 K (Operating Temp)
-        # Characteristics: High noise, high sensitivity to temperature.
+    elif task_id == 4:
+        # Scenario: Food Science (Vitamin C Degradation)
+        # Goal: Optimize pasteurization by determining k and Ea.
+        # Reference Temp: 343.15 K (70°C)
+        # Characteristics: Moderate noise, critical for food quality.
+        reaction_type = int(rng.choice([1, 2]))
+        return ReactionConfig(
+            order=reaction_type,
+            k=float(rng.uniform(0.005, 0.02)),
+            activation_energy=float(rng.uniform(50000, 80000)),
+            k_ref_temp=343.15,
+            noise_level=0.025,
+            scenario="Vitamin C Degradation"
+        )
+    else: # Default or error case, fallback to task 3 behavior for safety
         reaction_type = int(rng.choice([1, 2, 3]))
         return ReactionConfig(
             order=reaction_type,
             k=float(rng.uniform(0.002, 0.01)),
             k_reverse=float(rng.uniform(0.001, 0.005)) if reaction_type == 3 else 0.0,
-            activation_energy=float(rng.uniform(70000, 110000)), # High Ea
+            activation_energy=float(rng.uniform(70000, 110000)),
             k_ref_temp=350.15,
-            noise_level=0.045, # High noise
+            noise_level=0.045,
             scenario="Propellant Stability"
         )

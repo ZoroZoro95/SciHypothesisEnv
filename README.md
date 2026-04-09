@@ -41,6 +41,7 @@ All three tasks use the same action/observation interface but require different 
 | **Task 1** | Antibiotic Clearance | Pharmacokinetics | Order (1 or 2), k | $500 |
 | **Task 2** | CO₂ Carbon Capture | Industrial Chemistry | Order (always 3/Reversible), kf, kr | $800 |
 | **Task 3** | Rocket Propellant Stability | Aerospace Engineering | Order (1, 2, or 3), k, **Ea** | $1200 |
+| **Task 4** | Vitamin C Degradation | Food Science | Order (1 or 2), k, **Ea** | $1000 |
 
 ### Task 1 — Pharmacokinetics 💊
 > *A Phase I clinical trial is underway for a new aqueous antibiotic. Determine if the drug is cleared via 1st or 2nd order kinetics to ensure safe patient dosing.*
@@ -65,6 +66,14 @@ All three tasks use the same action/observation interface but require different 
 - **Noise level**: High (`0.045`) — very noisy data
 - **Goal**: Characterize order, k, and Ea using the Arrhenius equation
 - **Tip**: Vary temperature across ≥3 different values; check `suggested_ea` in hints
+
+### Task 4 — Vitamin C Degradation 🍊
+> *A fruit juice manufacturer wants to optimize pasteurization to minimize Vitamin C loss. Determine the degradation kinetics to ensure high product quality.*
+
+- **Reference temperature**: 343.15 K (70°C)
+- **Noise level**: Moderate (`0.025`)
+- **Goal**: Identify reaction order (1 or 2), k, and activation energy Ea
+- **Tip**: Perform experiments between 330 K and 380 K; prioritize temperature diversity for Ea accuracy
 
 ---
 
@@ -92,7 +101,7 @@ Each episode is scored on five components, weighted as follows:
 |-----------|--------|-------------|
 | **Order Accuracy** | 30% | Correct reaction order (1, 2, or 3) |
 | **k Accuracy** | 25% | Rate constant accuracy (log-scale error) |
-| **Ea Accuracy** | 15% | Activation energy accuracy (Task 3 only) |
+| **Ea Accuracy** | 15% | Activation energy accuracy (Tasks 3 & 4) |
 | **Budget Efficiency** | 15% | More reward for spending less |
 | **Step Efficiency** | 5% | More reward for concluding earlier |
 | **Step Bonuses** | 10% | Accumulated reward from intermediate steps |
