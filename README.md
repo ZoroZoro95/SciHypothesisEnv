@@ -10,8 +10,8 @@ pinned: false
 
 <div align="center">
   <h1>🧪 Lab-Triage-Environment</h1>
-  <p><b>The Benchmark for Senior Chemical Kinetics Infrastructure Commanders</b></p>
-  <p><em>An OpenEnv project evaluating the strategic diagnostic capability of AI agents in high-stakes chemical crises.</em></p>
+  <p><b>Scientific Decision Making & Triage Under Pressure</b></p>
+  <p><em>An OpenEnv benchmark evaluating whether AI agents can manage limited resources to solve high-stakes chemical crises.</em></p>
 </div>
 
 <p align="center">
@@ -19,18 +19,28 @@ pinned: false
   <img src="https://img.shields.io/badge/Grading-Immaculate_Discovery-red?style=for-the-badge" />
 </p>
 
+| Property | Description |
+| :--- | :--- |
+| **Domain** | Chemical Kinetics & Process Safety |
+| **Primary Task** | Stochastic Multi-Sensor Triage |
+| **Persona** | Senior Chemical Kinetics Engineer |
+| **Grading** | Deterministic (Zero-LLM Variance) |
+| **Complexity** | Differential Equation ODE Simulator |
+
 ---
 
 ## 🚩 The Mission
-Industrial disasters often hinge on a single mathematical variable: **Kinetics**. When a reactor destabilizes or a seed vault loses power, the Senior Engineer must filter through a "noise floor" of hundreds of sensors to identify the one true threat.
+In a real-world chemical plant or high-tech laboratory, things go wrong fast. A cooling fan fails, a vial starts to leak, or a reactor begins to overheat. 
 
-**Lab-Triage-Environment** tests if an LLM can simulate this **Staff SRE / Kinetics Engineer** persona by correctly diagnosing, characterising, and dismissing complex reactive threats under strict budget and time constraints.
+The problem is **Noise**. In a crisis, you are flooded with data from dozens of sensors. Most are reporting normal conditions ("Red Herrings"), while only one is showing the actual threat. 
 
-### 🧠 Core Challenge: Noise Filtering vs. Precision
-Unlike standard science environments, this benchmark forces agents to:
-1. **Identify the signal** (Find the one degrading sensor among inert "Red Herrings").
-2. **Characterize the physics** (Determine the Reaction Order and Rate Constant $k$).
-3. **Isolate the Causal Driver** (Quantify Activation Energy $E_a$ to predict future surges).
+**Lab-Triage-Environment** tests if an AI agent can act as an expert scientist in these moments. The agent must find the "needle in the haystack," mathematically identify the threat, and recommend a fix—all while managing a strictly limited budget and time.
+
+### 🧠 The Core Challenge: Three Pillars of Triage
+This benchmark evaluates three specific skills that differentiate a "guessing" agent from a "thinking" agent:
+1. **Strategic Probing**: Can the agent efficiently use a limited budget to find the one decaying sensor among the noise?
+2. **Kinetic Accuracy**: Can the agent accurately calculate the physics (Reaction Order and Rate) of the threat?
+3. **Resource Management**: Can the agent solve the crisis with the minimum number of experiments before the "reactor" fails?
 
 ---
 
