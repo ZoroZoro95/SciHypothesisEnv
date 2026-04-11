@@ -1,5 +1,5 @@
 spec_version: 1
-name: sci_hypothesis_env
+name: lab_triage_env
 type: space
 runtime: fastapi
 app: server.app:app

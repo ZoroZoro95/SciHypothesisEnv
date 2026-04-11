@@ -4,8 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Sci Hypothesis Env environment server components."""
+"""Lab Triage environment server components."""
 
-from .sci_hypothesis_env_environment import SciHypothesisEnvironment
+from .environment import LabTriageEnvironment
 
-__all__ = ["SciHypothesisEnvironment"]
+__all__ = ["LabTriageEnvironment"]

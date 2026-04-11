@@ -37,18 +37,18 @@ except Exception as e:  # pragma: no cover
 
 try:
     from ..models import SciHypothesisAction, SciHypothesisObservation
-    from .sci_hypothesis_env_environment import SciHypothesisEnvironment
+    from .environment import LabTriageEnvironment
 except (ModuleNotFoundError, ImportError):
     from models import SciHypothesisAction, SciHypothesisObservation
-    from server.sci_hypothesis_env_environment import SciHypothesisEnvironment
+    from server.environment import LabTriageEnvironment
 
 
 # Create the app with web interface and README integration
 app = create_app(
-    SciHypothesisEnvironment,
+    LabTriageEnvironment,
     SciHypothesisAction,
     SciHypothesisObservation,
-    env_name="sci_hypothesis_env",
+    env_name="lab_triage_env",
     max_concurrent_envs=1,  # increase this number to allow more concurrent WebSocket sessions
 )
 

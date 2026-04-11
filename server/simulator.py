@@ -199,62 +199,71 @@ def run_experiment(
         for i in range(len(t))
     ]
 
-def generate_task_config(task_id: int, seed: int = None) -> ReactionConfig:
+def generate_task_config(task_id: int, seed: int = None) -> dict:
     """
-    Generate a mechanistically diverse reaction config based on real-world scenarios.
+    Generate a dictionary of ReactionConfigs indexed by sensor/vial id ('A', 'B', 'C').
+    For crisis triage scenarios, some sensors are red herrings or competing priorities.
     """
     rng = np.random.default_rng(seed)
+    configs = {}
 
     if task_id == 1:
-        # Scenario: Pharmacokinetics (Antibiotic Clearance)
-        # Goal: Identify metabolic order (1st vs 2nd)
-        # Reference Temp: 310.15 K (Body Temp)
-        # Characteristics: Low noise, predictable, but critical for dosing.
-        reaction_type = int(rng.choice([1, 2]))
-        return ReactionConfig(
-            order=reaction_type,
-            k=float(rng.uniform(0.02, 0.08)),
-            activation_energy=float(rng.uniform(30000, 45000)),
-            k_ref_temp=310.15,
-            noise_level=0.003,
-            scenario="Pharmacokinetics"
+        # Task 1: The Runaway Reactor (Easy - Noise Filtering)
+        # Sensor A: Stable Inert Gas (Red-Herring)
+        configs["A"] = ReactionConfig(
+            order=1, k=1e-8, activation_energy=0.0, k_ref_temp=310.15, noise_level=0.001, scenario="Inert Gas"
         )
+        # Sensor B: True Degradation
+        reaction_type = int(rng.choice([1, 2]))
+        configs["B"] = ReactionConfig(
+            order=reaction_type, k=float(rng.uniform(0.02, 0.08)), activation_energy=float(rng.uniform(30000, 45000)),
+            k_ref_temp=310.15, noise_level=0.003, scenario="Reactant"
+        )
+        # Sensor C: Another Red-Herring
+        configs["C"] = ReactionConfig(
+            order=1, k=1e-8, activation_energy=0.0, k_ref_temp=310.15, noise_level=0.008, scenario="Coolant"
+        )
+
     elif task_id == 2:
-        # Scenario: Green Energy (Industrial Carbon Capture)
-        # Goal: Characterize Reversible Equilibrium
-        # Reference Temp: 298.15 K (Standard)
-        # Characteristics: Reversible (Order 3), finding the "plateau".
-        return ReactionConfig(
-            order=3,
-            k=float(rng.uniform(0.01, 0.04)),
-            k_reverse=float(rng.uniform(0.005, 0.02)),
-            activation_energy=float(rng.uniform(40000, 60000)),
-            k_ref_temp=298.15,
-            noise_level=0.015,
-            scenario="Carbon Capture"
+        # Task 2: Toxic Leak Prioritization (Medium - Deductive Reasoning)
+        # Gas A: Slow 1st order decay
+        configs["A"] = ReactionConfig(
+            order=1, k=float(rng.uniform(0.005, 0.01)), activation_energy=float(rng.uniform(30000, 40000)),
+            k_ref_temp=298.15, noise_level=0.005, scenario="Gas A"
         )
+        # Gas B: Reversible Plateau (The Real Threat)
+        configs["B"] = ReactionConfig(
+            order=3, k=float(rng.uniform(0.02, 0.05)), k_reverse=float(rng.uniform(0.01, 0.03)),
+            activation_energy=float(rng.uniform(40000, 60000)), k_ref_temp=298.15, noise_level=0.015, scenario="Gas B (Threat)"
+        )
+
     elif task_id == 4:
-        # Scenario: Food Science (Vitamin C Degradation)
-        # Goal: Optimize pasteurization by determining k and Ea.
-        # Reference Temp: 343.15 K (70°C)
-        # Characteristics: Moderate noise, critical for food quality.
-        reaction_type = int(rng.choice([1, 2]))
-        return ReactionConfig(
-            order=reaction_type,
-            k=float(rng.uniform(0.005, 0.02)),
-            activation_energy=float(rng.uniform(50000, 80000)),
-            k_ref_temp=343.15,
-            noise_level=0.025,
-            scenario="Vitamin C Degradation"
-        )
-    else: # Default or error case, fallback to task 3 behavior for safety
-        reaction_type = int(rng.choice([1, 2, 3]))
-        return ReactionConfig(
-            order=reaction_type,
-            k=float(rng.uniform(0.002, 0.01)),
-            k_reverse=float(rng.uniform(0.001, 0.005)) if reaction_type == 3 else 0.0,
-            activation_energy=float(rng.uniform(70000, 110000)),
-            k_ref_temp=350.15,
-            noise_level=0.045,
-            scenario="Propellant Stability"
-        )
+        # Task 4: Multi-Vial Epidemic Triage (Expert - Resource Allocation)
+        # Three vials, one has a significantly higher Ea (degrades fastest at room temp)
+        ea_values = [40000.0, 50000.0, 90000.0]
+        rng.shuffle(ea_values)
+        for i, sensor in enumerate(["A", "B", "C"]):
+            configs[sensor] = ReactionConfig(
+                order=int(rng.choice([1, 2])), k=float(rng.uniform(0.01, 0.02)),
+                activation_energy=float(ea_values[i]), k_ref_temp=343.15, noise_level=0.025, scenario=f"Vial {sensor}"
+            )
+
+    else:
+        # Task 3: Catalyst Poisoning (Hard - Root Cause Isolation)
+        # Only one sensor, but the physical nature of the reaction is the mystery.
+        is_thermal = bool(rng.choice([True, False]))
+        if is_thermal:
+            # Arrhenius breakdown
+            configs["A"] = ReactionConfig(
+                order=int(rng.choice([1, 2, 3])), k=float(rng.uniform(0.002, 0.01)),
+                k_reverse=float(rng.uniform(0.001, 0.005)), activation_energy=float(rng.uniform(70000, 110000)),
+                k_ref_temp=350.15, noise_level=0.045, scenario="Thermal Breakdown"
+            )
+        else:
+            # Foreign Contamination (Flat Ea, temperature invariant)
+            configs["A"] = ReactionConfig(
+                order=2, k=float(rng.uniform(0.005, 0.015)), k_reverse=0.0, activation_energy=0.1,  # Almost 0 Ea
+                k_ref_temp=350.15, noise_level=0.045, scenario="Contamination"
+            )
+
+    return configs

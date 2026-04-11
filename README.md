@@ -1,276 +1,166 @@
 ---
-title: Sci Hypothesis Env Environment Server
+title: Lab Triage Environment
 emoji: 🧪
-colorFrom: blue
-colorTo: purple
+colorFrom: red
+colorTo: blue
 sdk: docker
-pinned: false
 app_port: 8000
-base_path: /web
-tags:
-  - openenv
+pinned: false
 ---
 
-# 🔬 Sci Hypothesis Env — Chemical Kinetics Laboratory
+<div align="center">
+  <h1>🧪 Lab-Triage-Environment</h1>
+  <p><em>An OpenEnv benchmark testing the ability of AI agents to act as <b>Senior Chemical Kinetics Engineers</b> by diagnosing and mitigating high-stakes reactive crises.</em></p>
+</div>
 
-An **AI for Science** benchmark environment where agents must act as real scientists: design experiments within a budget, analyze concentration data, and deduce the hidden kinetic parameters of a chemical reaction.
+<p align="center">
+  <img src="https://img.shields.io/badge/OpenEnv-Phase_2_Verified-success?style=for-the-badge&logo=huggingface" />
+</p>
 
-This environment tests **scientific reasoning**, **strategic planning under budget constraints**, and **hypothesis-driven experimentation** — skills far beyond pattern recognition.
+## 💡 The Problem Statement
+Industrial chemical accidents, toxic leaks, and pharmaceutical spoilage cause millions of dollars in damages and severe environmental hazards. When a runaway reaction begins, the window to stop it is drastically short.
 
----
+Resolving these crises requires a **Senior Chemical Research Scientist** who can:
+1. **Noise Filtering** — Pinpointing the true degrading chemical amidst stable, inert "red herring" sensors.
+2. **Deductive Prioritization** — Identifying which reaction out of many has the highest mathematical risk (e.g., Activation Energy) of cascading.
+3. **Strict Resource Management** — Executing targeted, budget-constrained experiments to parameterize the threat before catastrophe strikes.
 
-## 🎯 What Is This Environment About?
+**Can an LLM Agent successfully simulate a Staff Chemical Engineer in a crisis?**
 
-The agent is placed inside a virtual chemistry laboratory. A hidden chemical reaction is taking place, governed by unknown kinetic parameters. The agent must:
-
-1. **Design and run experiments** (choosing temperature, concentration, and time points)
-2. **Interpret the results** using automated analysis hints (R² fits, Arrhenius analysis)
-3. **Propose hypotheses** and refine them
-4. **Conclude** with the correct reaction order, rate constant (k), and activation energy (Ea)
-
-Each experiment **costs money**, so the agent must be strategically efficient.
-
----
-
-## 🧪 Tasks — Real-World Case Studies
-
-All three tasks use the same action/observation interface but require different scientific strategies.
-
-| Task | Scenario | Domain | Hidden Parameters | Budget |
-|------|----------|--------|------------------|--------|
-| **Task 1** | Antibiotic Clearance | Pharmacokinetics | Order (1 or 2), k | $500 |
-| **Task 2** | CO₂ Carbon Capture | Industrial Chemistry | Order (always 3/Reversible), kf, kr | $800 |
-| **Task 3** | Rocket Propellant Stability | Aerospace Engineering | Order (1, 2, or 3), k, **Ea** | $1200 |
-| **Task 4** | Vitamin C Degradation | Food Science | Order (1 or 2), k, **Ea** | $1000 |
-
-### Task 1 — Pharmacokinetics 💊
-> *A Phase I clinical trial is underway for a new aqueous antibiotic. Determine if the drug is cleared via 1st or 2nd order kinetics to ensure safe patient dosing.*
-
-- **Reference temperature**: 310.15 K (body temperature)
-- **Noise level**: Low (`0.003`) — data is clean
-- **Goal**: Identify reaction order and estimate rate constant k
-- **Tip**: Start at 310.15 K, observe concentration decay, check Analysis Hints
-
-### Task 2 — Carbon Capture ♻️
-> *Optimizing a reversible CO₂ absorption reaction for industrial scrubbers. Unlike normal reactions, this one reaches an equilibrium plateau.*
-
-- **Reaction type**: Always **Reversible (Order 3)**
-- **Noise level**: Medium (`0.015`)
-- **Goal**: Identify that concentration levels off (doesn't go to zero) and estimate k
-- **Tip**: Use long time points to observe the plateau; check `fit_reversible` hint
-
-### Task 3 — Propellant Stability 🚀
-> *Determining the shelf-life stability of a high-energy rocket propellant. You must find the reaction order, k, AND the activation energy Ea.*
-
-- **Reference temperature**: 350.15 K (operating temperature)
-- **Noise level**: High (`0.045`) — very noisy data
-- **Goal**: Characterize order, k, and Ea using the Arrhenius equation
-- **Tip**: Vary temperature across ≥3 different values; check `suggested_ea` in hints
-
-### Task 4 — Vitamin C Degradation 🍊
-> *A fruit juice manufacturer wants to optimize pasteurization to minimize Vitamin C loss. Determine the degradation kinetics to ensure high product quality.*
-
-- **Reference temperature**: 343.15 K (70°C)
-- **Noise level**: Moderate (`0.025`)
-- **Goal**: Identify reaction order (1 or 2), k, and activation energy Ea
-- **Tip**: Perform experiments between 330 K and 380 K; prioritize temperature diversity for Ea accuracy
+No existing automated benchmark evaluates LLM agents on *strategic experimental triage*. This environment fills that gap. The LLM must read messy incident reports, conduct dynamic experiments on targeted physical sensors, identify the underlying kinetics (Order, $k$, $E_a$), and deploy a mathematical conclusion—all graded deterministically without "LLM-as-a-judge" variance.
 
 ---
 
-## 💰 Experiment Costs
+## 🎯 Task Scenarios
 
-The agent must run experiments within a fixed budget per task.
+The environment evaluates agents across 4 distinct crisis tiers, with scenarios and underlying values regenerating dynamically per episode.
 
-| Condition | Cost |
-|-----------|------|
-| Room temperature (280–350 K) | $50 |
-| High temperature (> 350 K) | $150 |
-| Low temperature (< 280 K) | $120 |
-| High concentration (> 1.0 mol/L) | +$30 |
-| Long/many time points (> 5 pts or > 500s) | +$50 |
+| Tier | Scenario Variant | The "Triage" Factor |
+|------|---------|---------------------|
+| **Easy** | **Reactor Gamma-7 / Isotope Breach** | **Noise Filtering**. Search for the true unidirectional decay among inert coolant red-herrings (Sensors A, B, C). |
+| **Medium** | **Scrubber Rupture / Polymer Surge** | **Deductive Reasoning**. Distinguishing lethal Reversible (Order 3) plateaus from standard linear driver leakage. |
+| **Hard** | **Propellant Bubbling / Battery Runaway** | **Root Cause isolation**. High-noise Arrhenius variance studies to find Activation Energy (Ea) under tight launch windows. |
+| **Expert** | **Seed Vault / Deep-Space Probe** | **Resource Allocation**. Multi-vial optimization to find the mix with the highest heat sensitivity (Highest Ea) across all sensors. |
 
-> If the agent attempts an experiment it cannot afford, it receives a penalty and the experiment is rejected.
+> [!NOTE]
+> **Stochastic Engine Enabled**: Every `reset()` call picks a random scenario variant and randomizes the "True Threat" sensor position, making this environment immune to benchmark memorization.
 
 ---
 
-## 📊 Grading & Reward Structure
+## 🚀 Quick Start (Try It Now)
 
-Each episode is scored on five components, weighted as follows:
+The environment natively exposes standard OpenEnv HTTP endpoints, deployed on HuggingFace Spaces. 
 
-| Component | Weight | Description |
-|-----------|--------|-------------|
-| **Order Accuracy** | 30% | Correct reaction order (1, 2, or 3) |
-| **k Accuracy** | 25% | Rate constant accuracy (log-scale error) |
-| **Ea Accuracy** | 15% | Activation energy accuracy (Tasks 3 & 4) |
-| **Budget Efficiency** | 15% | More reward for spending less |
-| **Step Efficiency** | 5% | More reward for concluding earlier |
-| **Step Bonuses** | 10% | Accumulated reward from intermediate steps |
+### Local Python Client
+```python
+import asyncio 
+from openenv.client import EnvClient 
 
-### Scoring Details
+async def main(): 
+    # Connect to the remote environment
+    env = await EnvClient.create("Quaxg/sci-hypothesis-env") 
 
-**k Accuracy** uses a log-scale metric that is tolerant of order-of-magnitude estimates:
-```
-k_score = max(0, 1 - |log10(k_pred) - log10(k_true)|)
+    # Start a crisis scenario (Task 4: Multi-Vial Epidemic)
+    result = await env.reset(task_id=4) 
+    print("====== INCIDENT REPORT ======") 
+    print(result.observation["incident_report"]) 
+
+    # Step — Run targeted diagnostic experiments
+    action = {
+        "action_type": "run_experiment",
+        "target_sensor": "A", # Targeting Vial A
+        "temperature": 343.15,
+        "concentration": 1.0,
+        "time_points": [0, 30, 60, 120]
+    }
+    
+    result = await env.step(action) 
+    print(f"\nExperimental Data: {result.observation['experimental_data']}")
+    
+asyncio.run(main())
 ```
 
-**Ea Accuracy** measures relative error:
-```
-ea_score = max(0, 1 - |Ea_pred - Ea_true| / Ea_true)
-```
-
-**Success threshold**: `score >= 0.5`
-
 ---
 
-## 🔬 Reaction Types
+## 🧩 Observation and Action Schema
 
-| Order | Type | ODE | Signature |
-|-------|------|-----|-----------|
-| 1 | 1st Order | `dC/dt = -k·C` | `ln(C) vs t` is linear |
-| 2 | 2nd Order | `dC/dt = -k·C²` | `1/C vs t` is linear |
-| 3 | Reversible | `dC/dt = -kf·C + kr·(C₀-C)` | C plateaus at non-zero equilibrium |
+Agents are presented with real-time `Incident Reports` and must issue exact commands to the laboratory simulator.
 
----
-
-## 🤖 Analysis Hints
-
-After every experiment, the environment automatically provides the following hints in the observation:
-
+### Agent Action Schema
 ```json
 {
-  "linearity_1st_order": 0.995,
-  "linearity_2nd_order": 0.712,
-  "fit_reversible": 0.621,
-  "suggested_order": 1,
-  "estimated_k": 0.04312,
+  "action_type": "run_experiment",
+  "target_sensor": "A",
   "temperature": 310.15,
-  "suggested_ea": 52400.0,
-  "ea_confidence": 0.998
+  "concentration": 1.0,
+  "time_points": [0, 10, 30, 100]
 }
 ```
 
-| Field | Description |
-|-------|-------------|
-| `linearity_1st_order` | R² of 1st order ODE fit |
-| `linearity_2nd_order` | R² of 2nd order ODE fit |
-| `fit_reversible` | R² of reversible ODE fit |
-| `suggested_order` | Best-fitting reaction order |
-| `estimated_k` | Rate constant from best ODE fit |
-| `suggested_ea` | Estimated Ea from Arrhenius regression (appears after ≥2 temperatures) |
-| `ea_confidence` | R² of Arrhenius linear regression |
-
----
-
-## ⚡ Quick Start
-
-### Running Locally
-
-```bash
-# 1. Start the server
-export PYTHONPATH=$PYTHONPATH:.
-uvicorn server.app:app --reload --host 0.0.0.0 --port 8000
-
-# 2. In another terminal, run the agent
-export ENV_URL="http://localhost:8000"
-export GROQ_API_KEY="your_api_key"
-python inference.py
-```
-
-### Connecting via Python Client
-
-```python
-from client import SciHypothesisEnv
-from models import SciHypothesisAction
-
-async with SciHypothesisEnv(base_url="http://localhost:8000") as env:
-    result = await env.reset(task_id=1)
-    obs = result.observation
-    print(f"Task: {obs.task_description}")
-    print(f"Budget: ${obs.budget_remaining}")
-
-    # Run an experiment
-    action = SciHypothesisAction(
-        action_type="run_experiment",
-        temperature=310.15,
-        concentration=0.5,
-        time_points=[0, 30, 60, 120, 300],
-        metadata={"episode_id": obs.metadata["episode_id"]}
-    )
-    result = await env.step(action)
-    print(f"Hints: {result.observation.analysis_hints}")
-```
-
-### Available Actions
-
+### Environment Observation
 ```json
-// Run an experiment
-{"action_type": "run_experiment", "temperature": 310.15, "concentration": 0.5, "time_points": [0, 30, 60, 120]}
-
-// Propose a hypothesis
-{"action_type": "propose_hypothesis", "hypothesis_text": "...", "predicted_order": 1, "predicted_k": 0.04}
-
-// Conclude the episode (triggers final scoring)
-{"action_type": "conclude", "final_order": 1, "final_k": 0.04, "final_activation_energy": null}
+{
+  "task_id": 4,
+  "incident_report": "🚨 INCIDENT REPORT: MULTI-VIAL EPIDEMIC TRIAGE.\nA refrigeration unit failed. Three vital experimental vaccines (A, B, C) are decaying...",
+  "budget_remaining": 800.0,
+  "experimental_data": [
+    {"time": 0.0, "concentration": 1.0, "temperature": 310.15},
+    {"time": 10.0, "concentration": 0.94, "temperature": 310.15}
+  ],
+  "analysis_hints": {
+    "measured_sensor": "A",
+    "suggested_order": 1,
+    "estimated_k": 0.0051
+  }
+}
 ```
 
 ---
 
-## 🚀 Deploying to Hugging Face Spaces
+## ⚖️ Immaculate Discovery: Grading Rigor
 
-```bash
-# From the environment directory
-openenv push
+This environment uses a unique **"Noise-Filtering"** grading architecture to ensure agents cannot game the benchmark via lucky guessing. In accordance with elite triage standards, agents are graded on:
 
-# Or with options
-openenv push --repo-id my-org/sci-hypothesis-env --private
-```
-
-After deployment, your space will be available at:
-`https://huggingface.co/spaces/<repo-id>`
-
-The deployed space includes:
-- **Web Interface** at `/web` — Interactive UI for exploring the environment
-- **API Docs** at `/docs` — Full OpenAPI/Swagger interface
-- **WebSocket** at `/ws` — Persistent session endpoint
+- **Mathematical Precision**: Accuracy of $k$ and $E_a$ estimates compared to the ground-truth ODE.
+- **Filtering Multiplier (CRITICAL)**: Following winning submissions, an agent **cannot score higher than 0.50** if it identifies the threat but fails to explicitly mention the status of the "Red Herring" sensors in its conclusion.
+- **Causal Reasoning Bonus**: Deterministic regex-based scoring for scientific keywords (*Arrhenius*, *Inert*, *Reversible*, *Plateau*) within the final reasoning text.
+- **Strategic Information Gain**: Per-step rewards are granted for "Discovery" (first probe of a threat) and "Symmetry" (comparing sensors at identical conditions).
 
 ---
 
-## 📁 Project Structure
+## 🧪 Baseline Inference
 
+Evaluation executed via `inference.py` using `llama-3.1-8b-instant` operating strictly at `TEMPERATURE=0.3`.
+
+```bash
+# Run the automated inference loop on all tasks
+uv run python inference.py
 ```
-sci_hypothesis_env/
-├── .gitignore                  # Git exclusions (includes verify_*.py, .venv/)
-├── .dockerignore               # Docker build exclusions
-├── __init__.py                 # Module exports
-├── README.md                   # This file
-├── openenv.yaml                # OpenEnv manifest
-├── pyproject.toml              # Project metadata and dependencies
-├── uv.lock                     # Locked dependencies
-├── client.py                   # SciHypothesisEnv WebSocket client
-├── models.py                   # Action and Observation Pydantic models
-├── inference.py                # LLM agent inference loop
-└── server/
-    ├── __init__.py             # Server module exports
-    ├── app.py                  # FastAPI application (HTTP + WebSocket)
-    ├── sci_hypothesis_env_environment.py  # Core environment logic (budget, hints, sessions)
-    ├── simulator.py            # ODE simulator, curve fitting, Arrhenius hints
-    ├── reward.py               # Scoring and reward computation
-    └── Dockerfile              # Container image definition
-```
+
+*Note: The inference baseline runs natively in isolated `[START]...[END]` loop blocks as required by the OpenEnv Phase 2 strict stdout protocols.*
 
 ---
 
-## 🔧 Development
+## 🔮 Future Roadmap (Next Rounds)
 
-### Building the Docker Image
+To scale this benchmark for autonomous engineering fleets, we have outlined the following development phases:
 
-```bash
-docker build -t sci_hypothesis_env-env:latest -f Dockerfile .
-```
+### Phase 1: Procedural Kinetic Fuzzing
+Implementing a generative model for chemical "noise profiles," allowing the environment to simulate sensor jitter, calibration drift, and signal cross-talk realistically.
 
-### Running with Docker
+### Phase 2: Interactive Laboratory Tool-Use
+Transitioning from a single `run_experiment` action to a suite of specific laboratory tools:
+- `mass_spec()` for molecular weight checks.
+- `ph_probe()` for acidity monitoring.
+- `titrate_sample()` for precise endpoint detection.
 
-```bash
-docker run -p 8000:8000 sci_hypothesis_env-env:latest
-```
- 
+### Phase 3: Fuzzy Semantic Determinism
+Integrating LLM-based verification for the `conclusion` field that uses semantic embedding similarity (rather than exact string matching) to reward deep scientific reasoning that matches the ground truth.
+
+### Phase 4: Massive Triage Scaling
+Simulating "Cloud Lab" outages where an agent must manage hundreds of concurrent reactors across several global sites, introducing network latency and asynchronous callback handling to the triage logic.
+
+---
+
+## 👨‍🔬 About
+A zero-LLM deterministic benchmark testing the ability of AI agents to act as Senior Chemical Engineers by prioritizing and neutralizing mathematical kinetic catastrophes.

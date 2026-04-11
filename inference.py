@@ -6,12 +6,9 @@ import sys
 import textwrap
 from typing import List, Optional
 
-# Add parent directory to sys.path to allow importing the package locally
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 from openai import OpenAI
-from sci_hypothesis_env.client import SciHypothesisEnv
-from sci_hypothesis_env.models import SciHypothesisAction as HypothesisAction
+from client import SciHypothesisEnv
+from models import SciHypothesisAction as HypothesisAction
 
 # --- Required env vars ---
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.groq.com/openai/v1")
@@ -25,31 +22,31 @@ MAX_STEPS = 12
 SUCCESS_THRESHOLD = 0.5
 
 SYSTEM_PROMPT = textwrap.dedent("""
-You are a scientific agent solving chemical kinetics problems.
-You interact with a reaction simulator. You must respond with ONLY valid JSON.
+You are a Senior Chemical Kinetics Engineer at a leading national laboratory.
+You manage high-stakes crisis situations. Multiple instruments (Sensors A, B, C) might trigger alarms, but only one is the root cause threat.
+You must respond with ONLY valid JSON.
 
 Available actions:
-1. Run an experiment:
-{"action_type": "run_experiment", "temperature": <270-400>, "concentration": <0.001-2.0>, "time_points": [...]}
+1. Run a diagnostic (experiment) on a specific sensor:
+{"action_type": "run_experiment", "target_sensor": "A", "temperature": <270-400>, "concentration": <0.001-2.0>, "time_points": [...]}
 
 2. Propose a hypothesis:
 {"action_type": "propose_hypothesis", "hypothesis_text": "<belief>", "predicted_order": <1, 2, or 3>, "predicted_k": <float>}
 
-3. Conclude (ends episode, triggers scoring):
+3. Conclude (ends the triage, resolves the incident):
 {"action_type": "conclude", "conclusion": "<reasoning>", "final_order": <1, 2, or 3>, "final_k": <float>, "final_activation_energy": <float or null>}
 
 Scenarios & Strategy:
-- Pharmacokinetics: Identify if a drug clears via 1st or 2nd order kinetics. Start at 310.15 K (Body Temp).
-- Industrial Equilibrium: Characterize reversible reactions (Order 3) where concentration plateaus.
-- Rocket Propellants: Determine E_a by varying temperature across a wide range (Arrhenius plot).
-- Vitamin C Degradation: Determine if degradation is 1st or 2nd order at pasteurization temps (330-380 K).
+- General: You will see multiple sensors. Use small, cheap experiments to identify which sensor is the true threat (e.g., degrading rapidly or plateauing), then focus on it.
+- Task 3: Extremely noisy. Determine if the failure is Thermal Breakdown (Arrhenius) or Contamination (flat) by varying temperature.
+- Task 4: Multi-Vial Epidemic. Find the vial with the HIGHEST Activation Energy (Ea) and fully characterize it.
 
 Budget Management:
-Each experiment costs money. Task 1: $500, Task 2: $800, Task 3: $1200, Task 4: $1000.
-Costs: Room temp $50, High temp (>350K) $150, Low temp (<280K) $120, High conc (>1.0) $80, Many/Long points $100.
+Each experiment costs money. Room temp: $50. High/Low temp: +$100. Long/dense points: +$50. 
+If an action exceeds your budget, you receive a penalty.
 
 Analysis Hints:
-The environment provides "analysis_hints" after each experiment. Use these to refine your strategy.
+The environment provides "analysis_hints" after each experiment, giving R^2 fits and Arrhenius estimates specifically for the targeted sensor.
 """).strip()
 
 
@@ -121,7 +118,7 @@ async def run_episode(task_id: int) -> float:
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": (
-                f"Task: {obs.task_description}\n"
+                f"Incident Report: {obs.incident_report}\n"
                 f"Context: {obs.known_context}\n"
                 f"Max steps: {obs.max_steps}\n"
                 f"Starting Budget: ${obs.budget_remaining}\n"

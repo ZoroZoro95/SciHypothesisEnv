@@ -28,6 +28,7 @@ class SciHypothesisAction(Action):
     temperature : Optional[float] = None #optional[float] means it can be float or None | Kelvin, valid: 270–400
     concentration : Optional[float] = None  # mol/L, valid: 0.001–2.0
     time_points : Optional[list[float]] = None # seconds, e.g. [0,10,30,60,120]
+    target_sensor : Optional[str] = None # 'A', 'B', or 'C' for multi-sensor crisis tasks
 
     #used when action_type is == propose_hypothesis
     hypothesis_text : Optional[str] = None #free text beleif system
@@ -55,6 +56,9 @@ class SciHypothesisObservation(Observation):
     # Budget info
     budget_remaining: Optional[float] = None
     budget_spent: Optional[float] = None
+
+    # Crisis Report
+    incident_report: Optional[str] = None # Replaces task_description for crisis details
 
     # After run_experiment
     experimental_data : Optional[list[dict]] = None 

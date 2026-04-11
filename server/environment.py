@@ -19,56 +19,109 @@ from openenv.core.env_server.types import Action, Observation
 
 try:
     from .simulator import generate_task_config, run_experiment, ReactionConfig
-    from .reward import compute_step_reward, compute_rewards
+    from .graders import score_diagnostic_action, calculate_triage_score
     from ..models import SciHypothesisAction, SciHypothesisObservation
 except ImportError:
     from server.simulator import generate_task_config, run_experiment, ReactionConfig
-    from server.reward import compute_step_reward, compute_rewards
+    from server.graders import score_diagnostic_action, calculate_triage_score
     from models import SciHypothesisAction, SciHypothesisObservation
 
-TASK_DESCRIPTIONS = {
-    1: (
-        "PHARMACOKINETICS — Antibiotic Clearance Challenge. "
-        "A Phase I clinical trial is underway for a new aqueous antibiotic. "
-        "Your goal is to determine if the drug is cleared via 1st or 2nd order kinetics "
-        "to ensure safe patient dosing. Budget: $500. "
-        "Note: Body temperature is 310.15 K. Start there for baseline data."
-    ),
-    2: (
-        "GREEN ENERGY — Carbon Capture Equilibrium. "
-        "You are optimizing a reversible CO2 absorption reaction for industrial scrubbers. "
-        "Unlike standard reactions, this one reaches a plateau (equilibrium). "
-        "Characterize the forward and reverse balance (Order 3). Budget: $800. "
-        "The reaction is sensitive to noise, so collect enough points to see the plateau."
-    ),
-    3: (
-        "AEROSPACE — Propellant Thermal Stability. "
-        "A high-energy rocket propellant is being tested for long-term storage safety. "
-        "You must determine the reaction order, k, AND the activation energy (Ea). "
-        "Data is extremely noisy. Precision is critical for mission success. Budget: $1200. "
-        "You MUST vary temperature strategically to build an Arrhenius model."
-    ),
-    4: (
-        "FOOD SCIENCE — Vitamin C Degradation. "
-        "A fruit juice manufacturer wants to optimize pasteurization. "
-        "Determine the degradation kinetics of Vitamin C (Order 1 or 2) "
-        "at pasteurization temperatures (330-380 K). Budget: $1000. "
-        "Moderate noise levels require multiple experiments for confidence."
-    )
+INCIDENT_VARIANTS = {
+    1: [
+        (
+            "🚨 INCIDENT REPORT [VARIANT ALPHA]: EXPERIMENTAL REACTOR GAMMA-7.\n"
+            "The Experimental Reactor at the Sector 7 refinery is screaming. A localized heat-exchanger failure "
+            "has triggered a rapid, unidirectional decomposition in the primary chamber. You are the Senior "
+            "Incident Commander on site. Dashboard sensors A, B, and C are flooding with data, but two are known "
+            "red-herring readings from inert coolant loops.\n"
+            "Identify the single sensor showing true kinetic degradation and characterize its decay order and "
+            "rate constant (k) to initialize emergency quenching procedures.\n"
+            "Status: High-Pressure Warning. Budget: $700. Baseline: 310.15 K."
+        ),
+        (
+            "🚨 INCIDENT REPORT [VARIANT BETA]: MEDICAL ISOTOPE CONTAINMENT BREACH.\n"
+            "A medical isotope facility reports a cracked storage vial in the Triage Wing. One of the storage "
+            "vials containing a decaying tracer is leaking radiation. Multiple 'ghost' sensors (A, B, C) "
+            "are being triggered by background gamma flares.\n"
+            "As the onsite kinetics expert, you must isolate the leaking sensor and determine if it follows 1st "
+            "or 2nd order decay to predict the contaminated fallout radius and evacuation zone.\n"
+            "Status: Radiation Leak. Budget: $700."
+        )
+    ],
+    2: [
+        (
+            "🚨 INCIDENT REPORT [VARIANT GAMMA]: PETROCHEMICAL SCRUBBER RUPTURE.\n"
+            "An industrial gas scrubber at the North-South refinery has failed, releasing two toxic byproducts. "
+            "Internal monitors A and B are active. One byproduct is a predictable, slow 1st-order decay. "
+            "The other is a lethal Reversible (Order 3) equilibrium that will plateau at toxic atmospheric levels.\n"
+            "Identify which sensor captures the plateauing threat and characterize its balance constants "
+            "before the facility-wide evacuation sirens time out.\n"
+            "Status: Atmospheric Leak. Budget: $900."
+        ),
+        (
+            "🚨 INCIDENT REPORT [VARIANT DELTA]: POLYMERIZATION SURGE.\n"
+            "A chemical manufacturing line is overheating due to an unintended polymerization surge. "
+            "Two potential catalysts are being monitored via sensors A and B. One is a standard linear driver; "
+            "the other is a self-terminating Reversible equilibrium that will saturate the line.\n"
+            "Deduce which sensor shows the reversible surge to allow the Command Center to adjust the pressure "
+            "valves correctly before the gaskets fail.\n"
+            "Status: Surge Detected. Budget: $900."
+        )
+    ],
+    3: [
+        (
+            "🚨 INCIDENT REPORT [VARIANT KAPPA]: SPACEPORT PROPELLANT BUBBLING.\n"
+            "Liquid Propellant Storage at Launch Pad 39B is bubbling. High-energy propellants are degrading "
+            "spontaneously in the heat. Strategic data is needed to isolate the root cause: is it "
+            "'Thermal Breakdown' (High Activation Energy sensitivity) or 'Foreign Dust Contamination' (Flat temperature response)?\n"
+            "Monitoring data for Sensor A is messy and noisy. You must perform a precision temperature variance "
+            "study to find the Activation Energy (Ea) and save the pre-launch window.\n"
+            "Status: T-Minus 2 Hours. Budget: $1200."
+        ),
+        (
+            "🚨 INCIDENT REPORT [VARIANT EPSILON]: BATTERY ARRAY THERMAL RUNAWAY.\n"
+            "An experimental battery electrolyte array is bubbling in the test lab. It could be a simple 2nd order "
+            "decay or a catastrophic high-Ea Arrhenius event triggered by the room temperature.\n"
+            "You are tasked with quantifying the Activation Energy (Ea) of Sensor A to determine if this array "
+            "presents a fire risk at standard operating temperatures or requires immediate cryogenic immersion.\n"
+            "Status: Overheating Alert. Budget: $1200."
+        )
+    ],
+    4: [
+        (
+            "🚨 INCIDENT REPORT [VARIANT SIGMA]: GLOBAL SEED VAULT REFRIGERATION FAILURE.\n"
+            "The refrigeration system in the Svalbard Seed Vault has failed. Three irreplaceable genetic "
+            "vials (A, B, and C) are beginning to warm. Logistics dictate you can only perform intensive quenching "
+            "on ONE sample. You must identify which vial has the HIGHEST Activation Energy (Ea).\n"
+            "The highest Ea vial is the most critically sensitive to this heat catastrophe. Minimize your "
+            "experiments to find this vial and characterize its kinetics for stabilization.\n"
+            "Status: Arctic Alert. Budget: $1000."
+        ),
+        (
+            "🚨 INCIDENT REPORT [VARIANT OMEGA]: DEEP-SPACE PROBE 'HORIZON' FUEL TRIAGE.\n"
+            "The 'Horizon' deep-space probe reports that its hydrazine tanks are warming due to solar flares. "
+            "Three propellant mix variants (A, B, C) are under remote monitoring. To save the probe, you must "
+            "identify which variant has the highest sensitivity to heat (Highest Ea).\n"
+            "Characterize the kinetics of the highest-risk variant immediately so the probe can re-orient its "
+            "solar shields correctly without a total loss of power.\n"
+            "Status: Deep Space Emergency. Budget: $1100."
+        )
+    ]
 }
 
-MAX_STEPS = {1: 5, 2: 6, 3: 8, 4: 7}
-TASK_BUDGETS = {1: 500, 2: 800, 3: 1200, 4: 1000}
+MAX_STEPS = {1: 8, 2: 8, 3: 8, 4: 7}
+TASK_BUDGETS = {1: 700, 2: 900, 3: 1200, 4: 1000}
 
 
-class SciHypothesisEnvironment(Environment):
+class LabTriageEnvironment(Environment):
 
     SUPPORTS_CONCURRENT_SESSIONS = True
     _sessions: ClassVar[dict] = {}
 
     def __init__(self):
         super().__init__()
-        self._config: Optional[ReactionConfig] = None
+        self._config: Optional[dict] = None
+        self._primary_target: Optional[str] = None
         self._task_id: Optional[int] = None
         self._episode_id: Optional[str] = None
         self._step_count: int = 0
@@ -79,8 +132,9 @@ class SciHypothesisEnvironment(Environment):
 
     def _save_session(self):
         if self._episode_id:
-            SciHypothesisEnvironment._sessions[self._episode_id] = {
+            LabTriageEnvironment._sessions[self._episode_id] = {
                 "config": self._config,
+                "primary_target": self._primary_target,
                 "task_id": self._task_id,
                 "step_count": self._step_count,
                 "done": self._done,
@@ -90,9 +144,10 @@ class SciHypothesisEnvironment(Environment):
             }
 
     def _load_session(self, episode_id: str) -> bool:
-        session = SciHypothesisEnvironment._sessions.get(episode_id)
+        session = LabTriageEnvironment._sessions.get(episode_id)
         if session:
             self._config = session["config"]
+            self._primary_target = session.get("primary_target", "A")
             self._task_id = session["task_id"]
             self._step_count = session["step_count"]
             self._done = session["done"]
@@ -122,11 +177,31 @@ class SciHypothesisEnvironment(Environment):
             self._task_id,
             seed=seed or np.random.randint(0, 99999)
         )
+        
+        # Pick a random text variant for this task
+        variants = INCIDENT_VARIANTS[self._task_id]
+        variant_idx = np.random.randint(len(variants))
+        self._selected_report = variants[variant_idx]
+
+        # Randomize the primary "Threat" sensor (A, B, or C) where applicable
+        sensor_roll = np.random.choice(list(self._config.keys()))
+        
+        if self._task_id == 1:
+            self._primary_target = sensor_roll # The one degrading
+        elif self._task_id == 2:
+            self._primary_target = sensor_roll # The reversible threat
+        elif self._task_id == 4:
+            # The vial with the highest Ea (Fastest threat)
+            self._primary_target = max(self._config.keys(), key=lambda k: self._config[k].activation_energy)
+        else:
+            self._primary_target = "A"
+
         self._save_session()
 
         return SciHypothesisObservation(
             task_id=self._task_id,
-            task_description=TASK_DESCRIPTIONS[self._task_id],
+            incident_report=self._selected_report,
+            task_description="[CRISIS OVERRIDE] Please refer to incident_report.",
             current_step=0,
             max_steps=MAX_STEPS[self._task_id],
             experiments_remaining=MAX_STEPS[self._task_id],
@@ -191,13 +266,29 @@ class SciHypothesisEnvironment(Environment):
             conc = max(0.001, min(2.0, action.concentration or 1.0))
             times = action.time_points or [0, 30, 60, 120, 300]
 
+            target = action.target_sensor or "A"
+            if target not in self._config:
+                error_msg = f"Invalid target_sensor '{target}'. Available: {list(self._config.keys())}"
+                return SciHypothesisObservation(
+                    task_id=self._task_id,
+                    incident_report=self._selected_report,
+                    task_description="[CRISIS OVERRIDE] Please refer to incident_report.",
+                    current_step=self._step_count,
+                    max_steps=MAX_STEPS[self._task_id],
+                    experiments_remaining=remaining_steps,
+                    hypothesis_feedback=error_msg,
+                    reward=-0.01,
+                    metadata={"episode_id": self._episode_id}
+                )
+
             cost = self._calculate_experiment_cost(temp, conc, times)
             
             if self._budget_spent + cost > total_budget:
                 self._save_session()
                 return SciHypothesisObservation(
                     task_id=self._task_id,
-                    task_description=TASK_DESCRIPTIONS[self._task_id],
+                    incident_report=self._selected_report,
+                    task_description="[CRISIS OVERRIDE]",
                     current_step=self._step_count,
                     max_steps=MAX_STEPS[self._task_id],
                     experiments_remaining=remaining_steps,
@@ -210,28 +301,33 @@ class SciHypothesisEnvironment(Environment):
                 )
 
             self._budget_spent += cost
-            data = run_experiment(self._config, temp, conc, times)
+            target_config = self._config[target]
+            data = run_experiment(target_config, temp, conc, times)
 
             # Compute the true k at this temperature (used internally for Arrhenius hints only)
             from .simulator import arrhenius_k, compute_hints
             actual_k_at_T = arrhenius_k(
-                self._config.k,
-                self._config.activation_energy,
-                self._config.k_ref_temp,
+                target_config.k,
+                target_config.activation_energy,
+                target_config.k_ref_temp,
                 temp
             )
 
-            # Extract history of (actual_k_at_T, T) from previous experiments
+            # Extract history of (actual_k_at_T, T) from previous experiments FOR THIS SENSOR
             history = [
                 {"k": entry["actual_k_at_T"], "T": entry["temperature"]}
                 for entry in self._experiment_log
-                if "actual_k_at_T" in entry
+                if "actual_k_at_T" in entry and entry.get("target") == target
             ]
 
             hints = compute_hints(data, temp, history=history, actual_k_at_T=actual_k_at_T)
+            
+            # For multi-sensor tasks, inject the target name
+            hints["measured_sensor"] = target
 
             self._experiment_log.append({
                 "step": self._step_count,
+                "target": target,
                 "temperature": temp,
                 "concentration": conc,
                 "cost": cost,
@@ -241,20 +337,23 @@ class SciHypothesisEnvironment(Environment):
             })
 
             # Per-step reward AFTER appending to log
-            step_reward, step_breakdown = compute_step_reward(
+            step_reward, step_breakdown = score_diagnostic_action(
                 action_type="run_experiment",
                 step_count=self._step_count,
                 max_steps=MAX_STEPS[self._task_id],
                 experiment_log=self._experiment_log,
                 temperature=temp,
                 concentration=conc,
+                target_sensor=target,
+                primary_target=self._primary_target,
             )
             self._accumulated_step_rewards += step_reward
             self._save_session()
 
             return SciHypothesisObservation(
                 task_id=self._task_id,
-                task_description=TASK_DESCRIPTIONS[self._task_id],
+                incident_report=self._selected_report,
+                task_description="[CRISIS OVERRIDE]",
                 current_step=self._step_count,
                 max_steps=MAX_STEPS[self._task_id],
                 experiments_remaining=remaining_steps,
@@ -272,13 +371,14 @@ class SciHypothesisEnvironment(Environment):
 
         # ---- propose_hypothesis ----
         elif action.action_type == "propose_hypothesis":
-            step_reward, step_breakdown = compute_step_reward(
+            step_reward, step_breakdown = score_diagnostic_action(
                 action_type="propose_hypothesis",
                 step_count=self._step_count,
                 max_steps=MAX_STEPS[self._task_id],
                 experiment_log=self._experiment_log,
                 predicted_order=action.predicted_order,
                 predicted_k=action.predicted_k,
+                primary_target=self._primary_target,
             )
             self._accumulated_step_rewards += step_reward
 
@@ -292,13 +392,14 @@ class SciHypothesisEnvironment(Environment):
 
             return SciHypothesisObservation(
                 task_id=self._task_id,
-                task_description=TASK_DESCRIPTIONS[self._task_id],
+                task_description="[CRISIS OVERRIDE]",
                 current_step=self._step_count,
                 max_steps=MAX_STEPS[self._task_id],
                 experiments_remaining=remaining_steps,
                 budget_remaining=total_budget - self._budget_spent,
                 budget_spent=self._budget_spent,
                 hypothesis_feedback=feedback,
+                incident_report=self._selected_report,
                 done=False,
                 reward=step_reward,
                 metadata={
@@ -310,15 +411,21 @@ class SciHypothesisEnvironment(Environment):
         # ---- conclude ----
         elif action.action_type == "conclude":
             self._done = True
+            
+            # Extract the actual primary threat config to grade the agent against
+            primary_config = self._config[self._primary_target]
 
-            reward, breakdown = compute_rewards(
+            reward, breakdown = calculate_triage_score(
                 task_id=self._task_id,
                 final_order=action.final_order or 0,
                 final_k=action.final_k or 0.0,
                 final_activation_energy=action.final_activation_energy,
-                true_order=self._config.order,
-                true_k=self._config.k,
-                true_activation_energy=self._config.activation_energy,
+                conclusion_text=action.conclusion or "",
+                true_order=primary_config.order,
+                true_k=primary_config.k,
+                true_activation_energy=primary_config.activation_energy,
+                primary_target=self._primary_target,
+                available_sensors=list(self._config.keys()),
                 steps_used=self._step_count,
                 max_steps=MAX_STEPS[self._task_id],
                 budget_spent=self._budget_spent,
@@ -329,17 +436,18 @@ class SciHypothesisEnvironment(Environment):
 
             return SciHypothesisObservation(
                 task_id=self._task_id,
-                task_description=TASK_DESCRIPTIONS[self._task_id],
+                incident_report=self._selected_report,
+                task_description="[CRISIS OVERRIDE]",
                 current_step=self._step_count,
                 max_steps=MAX_STEPS[self._task_id],
                 experiments_remaining=0,
                 budget_remaining=total_budget - self._budget_spent,
                 budget_spent=self._budget_spent,
                 final_feedback=(
-                    f"Episode complete. "
-                    f"True order: {self._config.order} ({'Reversible' if self._config.order == 3 else 'Normal'}), "
-                    f"True k: {round(self._config.k, 6)}, "
-                    f"True Ea: {round(self._config.activation_energy, 1)} J/mol. "
+                    f"Triage complete. Real Threat was Sensor {self._primary_target}. "
+                    f"True order: {primary_config.order} ({'Reversible' if primary_config.order == 3 else 'Normal'}), "
+                    f"True k: {round(primary_config.k, 6)}, "
+                    f"True Ea: {round(primary_config.activation_energy, 1)} J/mol. "
                     f"Your score: {breakdown['total']}"
                 ),
                 score_breakdown=breakdown,
