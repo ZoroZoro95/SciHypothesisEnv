@@ -10,81 +10,99 @@ pinned: false
 
 <div align="center">
   <h1>🧪 Lab-Triage-Environment</h1>
-  <p><em>An OpenEnv benchmark testing the ability of AI agents to act as <b>Senior Chemical Kinetics Engineers</b> by diagnosing and mitigating high-stakes reactive crises.</em></p>
+  <p><b>The Benchmark for Senior Chemical Kinetics Infrastructure Commanders</b></p>
+  <p><em>An OpenEnv project evaluating the strategic diagnostic capability of AI agents in high-stakes chemical crises.</em></p>
 </div>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/OpenEnv-Phase_2_Verified-success?style=for-the-badge&logo=huggingface" />
+  <img src="https://img.shields.io/badge/OpenEnv-Certified_Benchmark-blue?style=for-the-badge&logo=huggingface" />
+  <img src="https://img.shields.io/badge/Grading-Immaculate_Discovery-red?style=for-the-badge" />
 </p>
 
-## 💡 The Problem Statement
-Industrial chemical accidents, toxic leaks, and pharmaceutical spoilage cause millions of dollars in damages and severe environmental hazards. When a runaway reaction begins, the window to stop it is drastically short.
+---
 
-Resolving these crises requires a **Senior Chemical Research Scientist** who can:
-1. **Noise Filtering** — Pinpointing the true degrading chemical amidst stable, inert "red herring" sensors.
-2. **Deductive Prioritization** — Identifying which reaction out of many has the highest mathematical risk (e.g., Activation Energy) of cascading.
-3. **Strict Resource Management** — Executing targeted, budget-constrained experiments to parameterize the threat before catastrophe strikes.
+## 🚩 The Mission
+Industrial disasters often hinge on a single mathematical variable: **Kinetics**. When a reactor destabilizes or a seed vault loses power, the Senior Engineer must filter through a "noise floor" of hundreds of sensors to identify the one true threat.
 
-**Can an LLM Agent successfully simulate a Staff Chemical Engineer in a crisis?**
+**Lab-Triage-Environment** tests if an LLM can simulate this **Staff SRE / Kinetics Engineer** persona by correctly diagnosing, characterising, and dismissing complex reactive threats under strict budget and time constraints.
 
-No existing automated benchmark evaluates LLM agents on *strategic experimental triage*. This environment fills that gap. The LLM must read messy incident reports, conduct dynamic experiments on targeted physical sensors, identify the underlying kinetics (Order, $k$, $E_a$), and deploy a mathematical conclusion—all graded deterministically without "LLM-as-a-judge" variance.
+### 🧠 Core Challenge: Noise Filtering vs. Precision
+Unlike standard science environments, this benchmark forces agents to:
+1. **Identify the signal** (Find the one degrading sensor among inert "Red Herrings").
+2. **Characterize the physics** (Determine the Reaction Order and Rate Constant $k$).
+3. **Isolate the Causal Driver** (Quantify Activation Energy $E_a$ to predict future surges).
 
 ---
 
-## 🎯 Task Scenarios
+## 🏗️ Environment Architecture
 
-The environment evaluates agents across 4 distinct crisis tiers, with scenarios and underlying values regenerating dynamically per episode.
-
-| Tier | Scenario Variant | The "Triage" Factor |
-|------|---------|---------------------|
-| **Easy** | **Reactor Gamma-7 / Isotope Breach** | **Noise Filtering**. Search for the true unidirectional decay among inert coolant red-herrings (Sensors A, B, C). |
-| **Medium** | **Scrubber Rupture / Polymer Surge** | **Deductive Reasoning**. Distinguishing lethal Reversible (Order 3) plateaus from standard linear driver leakage. |
-| **Hard** | **Propellant Bubbling / Battery Runaway** | **Root Cause isolation**. High-noise Arrhenius variance studies to find Activation Energy (Ea) under tight launch windows. |
-| **Expert** | **Seed Vault / Deep-Space Probe** | **Resource Allocation**. Multi-vial optimization to find the mix with the highest heat sensitivity (Highest Ea) across all sensors. |
-
-> [!NOTE]
-> **Stochastic Engine Enabled**: Every `reset()` call picks a random scenario variant and randomizes the "True Threat" sensor position, making this environment immune to benchmark memorization.
-
----
-
-## 🚀 Quick Start (Try It Now)
-
-The environment natively exposes standard OpenEnv HTTP endpoints, deployed on HuggingFace Spaces. 
-
-### Local Python Client
-```python
-import asyncio 
-from openenv.client import EnvClient 
-
-async def main(): 
-    # Connect to the remote environment
-    env = await EnvClient.create("Quaxg/sci-hypothesis-env") 
-
-    # Start a crisis scenario (Task 4: Multi-Vial Epidemic)
-    result = await env.reset(task_id=4) 
-    print("====== INCIDENT REPORT ======") 
-    print(result.observation["incident_report"]) 
-
-    # Step — Run targeted diagnostic experiments
-    action = {
-        "action_type": "run_experiment",
-        "target_sensor": "A", # Targeting Vial A
-        "temperature": 343.15,
-        "concentration": 1.0,
-        "time_points": [0, 30, 60, 120]
-    }
-    
-    result = await env.step(action) 
-    print(f"\nExperimental Data: {result.observation['experimental_data']}")
-    
-asyncio.run(main())
+```mermaid
+graph TD
+    A[Incident Report] -->|Stochastic Narrative| B(AI Agent)
+    B -->|Action: run_experiment| C[Lab Simulator]
+    C -->|Observation: Time/Conc Data| B
+    B -->|Action: propose_hypothesis| D[Deductive Feedback]
+    B -->|Action: conclude| E[Immaculate Grader]
+    E -->|Success Metric| F{Score: 0.0 - 1.0}
+    F -->|Filtering Check| G[0.50 Noise-Filtering Cap]
 ```
 
 ---
 
-## 🧩 Observation and Action Schema
+## ⚖️ Immaculate Discovery: The Grading Philosophy
+To eliminate "lucky guessing," we implemented a deterministic grading system based on actual kinetic ground truth.
 
-Agents are presented with real-time `Incident Reports` and must issue exact commands to the laboratory simulator.
+> [!IMPORTANT]
+> **The 0.50 Noise-Filtering Cap**: Following elite triage standards, an agent **cannot score higher than 0.50** if it identifies the primary threat but fails to explicitly mention or dismiss the "Red Herring" sensors in its conclusion. This ensures the agent is actually performing *triage*, not just guessing the outlier.
+
+| Component | Weight | Logic |
+|-----------|--------|-------|
+| **Kinetics Accuracy** | 40% | Log-scale deviation of $k$ and $E_a$ from the ODE ground truth. |
+| **Noise Filtering** | 30% | Explicit dismissal of inert sensors (A, B, C) in reasoning. |
+| **Reasoning Bonus** | 15% | Detection of causal keywords (*Arrhenius, Plateau, Reversible*). |
+| **Efficiency** | 15% | High fractional bonus for minimizing experiments and budget. |
+
+---
+
+## 📊 Crisis Tiers (Mission Variants)
+
+The environment features a **Stochastic Scenario Engine**. Every `reset()` pulls from a pool of narrative variants, ensuring benchmark integrity.
+
+| Mission | Scenario | The Triage Factor |
+|---------|----------|-------------------|
+| **Level 1** | **Reactor Gamma-7** | **Signal Isolation**. Identify simple decay $(Order 1/2)$ among inert coolant loops. |
+| **Level 2** | **Scrubber Rupture** | **Equilibrium Detection**. Isolate lethal Reversible plateaus from linear leaks. |
+| **Level 3** | **Launch Pad 39B** | **Arrhenius Study**. Find root cause: Thermal breakdown vs. Contamination. |
+| **Level 4** | **Global Seed Vault** | **Resource Priority**. Identify the mix with the HIGHEST $E_a$ (Heat Sensitivity). |
+
+---
+
+## 🚀 Try It Now: Zero-Config API
+
+You can query the live environment directly via `curl` to test connection and responses.
+
+### 1. Reset the Environment (Task 1)
+```bash
+curl -X POST "https://quaxg-lab-triage-env.hf.space/reset?task_id=1" \
+     -H "Accept: application/json"
+```
+
+### 2. Run a Diagnostic Experiment
+```bash
+curl -X POST "https://quaxg-lab-triage-env.hf.space/step" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "action_type": "run_experiment",
+       "target_sensor": "A",
+       "temperature": 343.15,
+       "concentration": 1.0,
+       "time_points": [0, 30, 60, 120]
+     }'
+```
+
+---
+
+## 🧩 Technical Specifications
 
 ### Agent Action Schema
 ```json
@@ -97,11 +115,11 @@ Agents are presented with real-time `Incident Reports` and must issue exact comm
 }
 ```
 
-### Environment Observation
+### Observation Space
 ```json
 {
   "task_id": 4,
-  "incident_report": "🚨 INCIDENT REPORT: MULTI-VIAL EPIDEMIC TRIAGE.\nA refrigeration unit failed. Three vital experimental vaccines (A, B, C) are decaying...",
+  "incident_report": "🚨 INCIDENT REPORT: SVALBARD SEED VAULT FAILURE...",
   "budget_remaining": 800.0,
   "experimental_data": [
     {"time": 0.0, "concentration": 1.0, "temperature": 310.15},
@@ -117,50 +135,14 @@ Agents are presented with real-time `Incident Reports` and must issue exact comm
 
 ---
 
-## ⚖️ Immaculate Discovery: Grading Rigor
-
-This environment uses a unique **"Noise-Filtering"** grading architecture to ensure agents cannot game the benchmark via lucky guessing. In accordance with elite triage standards, agents are graded on:
-
-- **Mathematical Precision**: Accuracy of $k$ and $E_a$ estimates compared to the ground-truth ODE.
-- **Filtering Multiplier (CRITICAL)**: Following winning submissions, an agent **cannot score higher than 0.50** if it identifies the threat but fails to explicitly mention the status of the "Red Herring" sensors in its conclusion.
-- **Causal Reasoning Bonus**: Deterministic regex-based scoring for scientific keywords (*Arrhenius*, *Inert*, *Reversible*, *Plateau*) within the final reasoning text.
-- **Strategic Information Gain**: Per-step rewards are granted for "Discovery" (first probe of a threat) and "Symmetry" (comparing sensors at identical conditions).
-
----
-
-## 🧪 Baseline Inference
-
-Evaluation executed via `inference.py` using `llama-3.1-8b-instant` operating strictly at `TEMPERATURE=0.3`.
-
-```bash
-# Run the automated inference loop on all tasks
-uv run python inference.py
-```
-
-*Note: The inference baseline runs natively in isolated `[START]...[END]` loop blocks as required by the OpenEnv Phase 2 strict stdout protocols.*
-
----
-
 ## 🔮 Future Roadmap (Next Rounds)
 
-To scale this benchmark for autonomous engineering fleets, we have outlined the following development phases:
-
-### Phase 1: Procedural Kinetic Fuzzing
-Implementing a generative model for chemical "noise profiles," allowing the environment to simulate sensor jitter, calibration drift, and signal cross-talk realistically.
-
-### Phase 2: Interactive Laboratory Tool-Use
-Transitioning from a single `run_experiment` action to a suite of specific laboratory tools:
-- `mass_spec()` for molecular weight checks.
-- `ph_probe()` for acidity monitoring.
-- `titrate_sample()` for precise endpoint detection.
-
-### Phase 3: Fuzzy Semantic Determinism
-Integrating LLM-based verification for the `conclusion` field that uses semantic embedding similarity (rather than exact string matching) to reward deep scientific reasoning that matches the ground truth.
-
-### Phase 4: Massive Triage Scaling
-Simulating "Cloud Lab" outages where an agent must manage hundreds of concurrent reactors across several global sites, introducing network latency and asynchronous callback handling to the triage logic.
+- **Phase 1: Procedural Fuzzing**: Generative "noise profiles" to simulate sensor jitter and cross-talk.
+- **Phase 2: Complex Tool-Use**: Integration of `mass_spec()`, `ph_probe()`, and `titrate_sample()` actions.
+- **Phase 3: Multi-Reactor Fleet**: Managing 10+ concurrent reactors across global sites with network latency.
 
 ---
 
-## 👨‍🔬 About
-A zero-LLM deterministic benchmark testing the ability of AI agents to act as Senior Chemical Engineers by prioritizing and neutralizing mathematical kinetic catastrophes.
+## 👨‍🔬 About / Citation
+This benchmark is built for the **OpenEnv** ecosystem to push the boundaries of LLM scientific reasoning. 
+*Contact: [Quaxg](https://huggingface.co/Quaxg)*
